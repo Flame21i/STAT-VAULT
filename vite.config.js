@@ -1,32 +1,20 @@
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-import tailwindcss from '@tailwindcss/vite';
-import { nodePolyfills } from 'vite-plugin-node-polyfills';
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
+import { nodePolyfills } from 'vite-plugin-node-polyfills'
 
 export default defineConfig({
   plugins: [
     tailwindcss(),
     react(),
-    nodePolyfills(),
+    nodePolyfills()
   ],
   build: {
     rollupOptions: {
-      external: [
-        '@tauri-apps/api',
-        '@tauri-apps/api/core',
-        '@tauri-apps/api/tauri',
-        '@tauri-apps/plugin-shell',
-        '@tauri-apps/plugin-fs',
-      ],
+      external: (id) => id.startsWith('@tauri-apps/')
     },
     rolldownOptions: {
-      external: [
-        '@tauri-apps/api',
-        '@tauri-apps/api/core',
-        '@tauri-apps/api/tauri',
-        '@tauri-apps/plugin-shell',
-        '@tauri-apps/plugin-fs',
-      ],
-    },
-  },
-});
+      external: (id) => id.startsWith('@tauri-apps/')
+    }
+  }
+})
