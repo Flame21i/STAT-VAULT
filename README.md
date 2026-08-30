@@ -102,12 +102,6 @@ Download the latest `StatVault-Pro_*.msi` from [Releases](https://github.com/Fla
 
 ---
 
-## License
-
-Proprietary – all rights reserved.
-
----
-
 ## Links
 
 - [Releases](https://github.com/Flame21i/STAT-VAULT/releases)
