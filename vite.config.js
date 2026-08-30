@@ -4,19 +4,17 @@ import tailwindcss from '@tailwindcss/vite'
 import { nodePolyfills } from 'vite-plugin-node-polyfills'
 
 export default defineConfig({
-  plugins: [tailwindcss(), react(), nodePolyfills()],
-  optimizeDeps: {
-    include: ['html2canvas-pro', 'recharts', 'lucide-react'],
-  },
+  plugins: [
+    tailwindcss(),
+    react(),
+    nodePolyfills()
+  ],
   build: {
-    commonjsOptions: {
-      include: [/html2canvas-pro/, /node_modules/],
-    },
     rollupOptions: {
-      external: (id) => id.startsWith('@tauri-apps/'),
+      external: (id) => id.startsWith('@tauri-apps/')
     },
     rolldownOptions: {
-      external: (id) => id.startsWith('@tauri-apps/'),
-    },
-  },
+      external: (id) => id.startsWith('@tauri-apps/')
+    }
+  }
 })
