@@ -95,7 +95,7 @@ Download the latest `StatVault-Pro_*.msi` from [Releases](https://github.com/Fla
 | react | 19.2.4 | UI framework |
 | recharts | 3.8.1 | Chart rendering |
 | lucide‑react | 1.7.0 | Icon library |
-| html2canvas‑pro | 2.4.0 | PNG export |
+| html-to-image | 1.11.13 | PNG export |
 | @tauri‑apps/cli | 2.11.4 | Desktop wrapper |
 | vite | 8.0.1 | Build tool |
 | tailwindcss | 4.2.2 | Styling |
