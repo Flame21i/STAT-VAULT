@@ -33,8 +33,6 @@ import {
   ReferenceArea
 } from 'recharts';
 
-import html2canvas from 'html2canvas-pro';
-
 import {
   Trash2,
   Plus,
@@ -66,7 +64,8 @@ import {
   Image as ImageIcon,
   Save,
   FolderOpen,
-  Grid
+  Grid,
+  FileSpreadsheet
 } from 'lucide-react';
 
 import {
@@ -1729,6 +1728,14 @@ const App = () => {
     setActiveIconPicker({ id: statId, x: event.clientX, y: event.clientY });
   }, []);
 
+  // Toast state
+  const [toast, setToast] = useState(null);
+  const showToast = useCallback((message) => {
+    setToast(message);
+    setTimeout(() => setToast(null), 3000);
+  }, []);
+
+  // JSON export
   const handleExport = useCallback(() => {
     const dataStr = JSON.stringify({ stats, entities }, null, 2);
     const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
@@ -1739,8 +1746,10 @@ const App = () => {
     document.body.appendChild(link);
     link.click();
     link.remove();
-  }, [stats, entities]);
+    showToast('JSON exported');
+  }, [stats, entities, showToast]);
 
+  // JSON import
   const handleImport = useCallback(event => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -1753,6 +1762,7 @@ const App = () => {
           setEntities(json.entities);
           setSelectedIds([]);
           setMonitorPage(0);
+          showToast('JSON imported');
         }
       } catch {
         console.error('Invalid JSON file');
@@ -1760,7 +1770,127 @@ const App = () => {
     };
     reader.readAsText(file);
     event.target.value = '';
-  }, []);
+  }, [showToast]);
+
+  // CSV export
+  const handleCsvExport = useCallback(() => {
+    if (!stats.length || !entities.length) {
+      showToast('No data to export');
+      return;
+    }
+    const rows = [];
+    // Header
+    const header = ['STAT', ...entities.map(e => e.name)];
+    rows.push(header);
+    // Data rows
+    stats.forEach(stat => {
+      const row = [stat.name];
+      entities.forEach(entity => {
+        row.push(entity.values[stat.id] ?? 0);
+      });
+      rows.push(row);
+    });
+    // Totals row? optional
+    const csvContent = rows.map(row => row.join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `statvault_export_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    showToast('CSV exported');
+  }, [stats, entities, showToast]);
+
+  // CSV import
+  const handleCsvImport = useCallback(event => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const text = e.target?.result || '';
+        const lines = text.trim().split('\n');
+        if (lines.length < 2) {
+          showToast('Invalid CSV: no data rows');
+          return;
+        }
+        const header = lines[0].split(',').map(c => c.trim());
+        const statNames = header.slice(1).map(c => c.trim());
+        const statNamesSet = new Set(stats.map(s => s.name));
+        const newStats = [...stats];
+        // For each column that is not a stat name, create a new stat if needed
+        statNames.forEach(name => {
+          if (!statNamesSet.has(name)) {
+            const newStat = {
+              id: `s_${crypto.randomUUID()}`,
+              name,
+              visible: false,
+              editing: false,
+              iconType: 'icon',
+              iconName: 'Hashtag'
+            };
+            newStats.push(newStat);
+            statNamesSet.add(name);
+            // add placeholder values for all entities
+            entities.forEach(entity => {
+              entity.values[newStat.id] = 0;
+            });
+          }
+        });
+        setStats(newStats);
+
+        // Update entity values
+        const newEntities = entities.map(entity => ({ ...entity, values: { ...entity.values } }));
+        const entityMap = new Map(newEntities.map(e => [e.name, e]));
+        const headerEntityNames = header.slice(1).map(c => c.trim());
+        // If some entities in CSV don't exist, create them
+        headerEntityNames.forEach(name => {
+          if (!entityMap.has(name)) {
+            const newEntity = {
+              id: `e_${crypto.randomUUID()}`,
+              name,
+              visible: true,
+              color: getRandomColor(),
+              values: {}
+            };
+            // fill with zeros for all stats
+            newStats.forEach(s => { newEntity.values[s.id] = 0; });
+            newEntities.push(newEntity);
+            entityMap.set(name, newEntity);
+          }
+        });
+
+        // Parse data rows
+        for (let i = 1; i < lines.length; i++) {
+          const cells = lines[i].split(',').map(c => c.trim());
+          if (cells.length !== header.length) continue;
+          const statName = cells[0];
+          const stat = newStats.find(s => s.name === statName);
+          if (!stat) continue;
+          for (let j = 1; j < cells.length; j++) {
+            const entityName = header[j];
+            const entity = entityMap.get(entityName);
+            if (entity && stat) {
+              entity.values[stat.id] = parseFloat(cells[j]) || 0;
+            }
+          }
+        }
+
+        setEntities(newEntities);
+        setSelectedIds([]);
+        setMonitorPage(0);
+        showToast('CSV imported');
+      } catch (err) {
+        console.error('CSV import error', err);
+        showToast('Failed to import CSV');
+      }
+    };
+    reader.readAsText(file);
+    event.target.value = '';
+  }, [stats, entities, getRandomColor, showToast]);
 
   const [projects, setProjects] = useState(() => {
     try {
@@ -1834,32 +1964,27 @@ const App = () => {
 
   const handlePngCopy = useCallback(async () => {
     if (!exportAreaRef.current) return;
-    
     setIsCopying(true);
-    
     try {
-      const canvas = await html2canvas(exportAreaRef.current, {
+      // Dynamic import – only loads when needed
+      const { toBlob } = await import('html-to-image');
+      const blob = await toBlob(exportAreaRef.current, {
         backgroundColor: '#080808',
-        scale: 2,
-        useCORS: true,
-        logging: false
+        pixelRatio: 2,
+        cacheBust: true
       });
-      
-      const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
-      
       await navigator.clipboard.write([
-        new ClipboardItem({
-          'image/png': blob
-        })
+        new ClipboardItem({ 'image/png': blob })
       ]);
-      
       setShowPngExport(false);
+      showToast('PNG copied to clipboard');
     } catch (err) {
       console.error('Failed to copy PNG to clipboard:', err);
+      showToast('Failed to copy PNG');
     } finally {
       setIsCopying(false);
     }
-  }, []);
+  }, [showToast]);
 
   const handlePngCancel = useCallback(() => {
     setShowPngExport(false);
@@ -2315,12 +2440,24 @@ const App = () => {
               className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest hover:text-white transition-all duration-200 ease-out hover-bg-white active-bg-white"
             >
               <Download size={12} className="text-zinc-600" />
-              Export
+              Export JSON
             </button>
             <label className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest hover:text-white transition-all duration-200 ease-out cursor-pointer hover-bg-white active-bg-white">
               <Upload size={12} className="text-zinc-600" />
-              Import
+              Import JSON
               <input type="file" accept=".json" onChange={handleImport} className="hidden" />
+            </label>
+            <button
+              onClick={handleCsvExport}
+              className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest hover:text-white transition-all duration-200 ease-out hover-bg-white active-bg-white"
+            >
+              <Download size={12} className="text-zinc-600" />
+              Export CSV
+            </button>
+            <label className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest hover:text-white transition-all duration-200 ease-out cursor-pointer hover-bg-white active-bg-white">
+              <Upload size={12} className="text-zinc-600" />
+              Import CSV
+              <input type="file" accept=".csv" onChange={handleCsvImport} className="hidden" />
             </label>
           </div>
         </div>
@@ -2344,6 +2481,13 @@ const App = () => {
           </button>
         </div>
       </header>
+
+      {/* Toast notification */}
+      {toast && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[500] bg-emerald-500 text-white px-4 py-2 rounded shadow-lg animate-fade-in-down">
+          {toast}
+        </div>
+      )}
 
       <div className="flex flex-1 overflow-hidden relative">
         <div
