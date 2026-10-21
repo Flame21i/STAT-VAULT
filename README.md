@@ -121,7 +121,6 @@ Create derived, computed statistics without external dependencies:
 
 ```text
 ├── index.html                   # HTML entry point with metadata and SEO
-├── metadata.json                # AI Studio application metadata
 ├── package.json                 # Project dependencies and script definitions
 ├── tsconfig.json                # TypeScript compiler configuration
 ├── vite.config.ts               # Vite bundler configuration
