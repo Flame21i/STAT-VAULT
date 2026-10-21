@@ -1,6 +1,0 @@
-{
-  "name": "StatVault Pro",
-  "description": "Multi-metric statistical comparison, radar benchmarking, and entity registry analysis dashboard.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}
