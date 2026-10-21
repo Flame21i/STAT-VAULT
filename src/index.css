@@ -1,11 +1,28 @@
 @import "tailwindcss";
 
+@theme {
+  --color-rose-50: #fff0f0;
+  --color-rose-100: #ffdcdc;
+  --color-rose-200: #ffb3b3;
+  --color-rose-300: #ff7575;
+  --color-rose-400: #ff2a2a;
+  --color-rose-500: #dd0000;
+  --color-rose-600: #b50000;
+  --color-rose-700: #8c0000;
+  --color-rose-800: #660000;
+  --color-rose-900: #420000;
+  --color-rose-950: #260000;
+  --color-accent: #dd0000;
+}
+
 * {
   outline: none !important;
   -webkit-tap-highlight-color: transparent;
 }
 
-html, body, #root {
+html,
+body,
+#root {
   width: 100%;
   height: 100%;
   margin: 0;
@@ -20,6 +37,21 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+html.light, body.light {
+  background-color: #e4e6e9;
+  color: #1e293b;
+}
+
+html.light .custom-scrollbar::-webkit-scrollbar-thumb,
+body.light .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.12);
+}
+
+html.light .custom-scrollbar::-webkit-scrollbar-thumb:hover,
+body.light .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.22);
 }
 
 #root {
@@ -49,7 +81,7 @@ input[type='range']::-webkit-slider-thumb {
   height: 10px;
   width: 10px;
   border-radius: 50%;
-  background: #10b981;
+  background: #dd0000;
   cursor: pointer;
 }
 
@@ -57,7 +89,41 @@ input[type='range']::-moz-range-thumb {
   height: 10px;
   width: 10px;
   border-radius: 50%;
-  background: #10b981;
+  background: #dd0000;
   cursor: pointer;
   border: none;
+}
+
+@keyframes flashRed {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+  }
+  50% {
+    transform: scale(1.45);
+    opacity: 0.9;
+    box-shadow: 0 0 8px 3px rgba(239, 68, 68, 0.9);
+  }
+}
+
+@keyframes flashYellow {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7);
+  }
+  50% {
+    transform: scale(1.45);
+    opacity: 0.9;
+    box-shadow: 0 0 8px 3px rgba(245, 158, 11, 0.9);
+  }
+}
+
+.dot-flash-red {
+  animation: flashRed 1s infinite ease-in-out;
+}
+
+.dot-flash-yellow {
+  animation: flashYellow 1s infinite ease-in-out;
 }
