@@ -203,8 +203,3 @@ Run the TypeScript compiler to verify type definitions without emitting files:
 npm run lint
 ```
 
----
-
-## License
-
-Private and proprietary. All rights reserved.
